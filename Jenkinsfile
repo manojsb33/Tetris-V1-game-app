@@ -55,7 +55,7 @@ pipeline {
                 script{
                     withDockerRegistry(credentialsId: 'docker', toolName: 'docker') {
                         sh '''
-                        docker build -t tetris ./src
+                        docker build -t tetris .
                         docker tag tetris manoj3366/tetris:latest
                         docker push manoj3366/tetris:latest
                         '''
