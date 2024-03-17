@@ -18,11 +18,11 @@ pipeline {
                 cleanWs()
             }
         }
-        stage('Sonarqube Analysis'){
+        stage("Sonarqube Analysis "){
             steps{
-                withSonarQubeEnv('sonar-scaner'){
-                    sh ''' $SCANNER_HOME/bin/sonar-scaner -Dsonar.projectName=Tetris \
-                    -Dsonar.projectkey=Tetris '''
+                withSonarQubeEnv('sonar-server') {
+                    sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Tetris \
+                    -Dsonar.projectKey=Tetris '''
                 }
             }
         }
