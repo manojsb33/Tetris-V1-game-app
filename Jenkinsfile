@@ -33,5 +33,40 @@ pipeline {
                 }
             }
         }
+        stage('NPM install'){
+            steps{
+                sh 'npm install'
+            }
+        }
+        stage('Trivy Scan'){
+            steps{
+                sh 'trivy fs . > trivyfs.txt'
+            }
+        }
+        stage('OWASP FS Scan'){
+            steps{
+                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
+                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+
+            }
+        }
+        stage('Docker build'){
+            steps{
+                script{
+                    withDockerRegistry(credentialsId: 'docker', toolName: 'docker') {
+                        sh '''
+                        docker build -t tetris .
+                        docker tag tetris manoj3366/tetris:latest
+                        docker push manoj3366/tetris:latest
+                        '''
+                    }
+                }
+            }
+        }
+        stage('Trivy image scan'){
+            steps{
+                sh 'trivy image manoj3366/tetris:latest > trivyimage.txt'
+            }
+        }
     }
 }
