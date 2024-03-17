@@ -1,37 +1,35 @@
-pipeline{
+pipeline {
     agent any
+    tools{
+        jdk 'jdk17'
+        nodejs 'node16'
+    }
+    environment {
+        SCANNER_HOME=tool "sonar-scaner"
+    }
     stages{
-        stage('Git-Checkot'){
+        stage('Git Checkout'){
             steps{
                 git branch: 'main', url: 'https://github.com/manojsb33/Tetris-V1-game-app.git'
-
             }
         }
-        stage('Launching EKS through Terraform'){
+        stage('Clean Workspace'){
             steps{
-                dir('Eks-terraform') {
-                    sh 'terraform init'
+                sh 'cleanWs'
+            }
+        }
+        stage('Sonarqube Analysis'){
+            steps{
+                withSonarQubeEnv('sonar-scaner'){
+                    sh ''' $SCANNER_HOME/bin/sonar-scaner -Dsonar.projectName=Tetris \
+                    -Dsonar.projectkey=Tetris '''
                 }
             }
         }
-        stage('Terraform Validate'){
+        stage('Quality Gate Analysis'){
             steps{
-                dir('Eks-terraform') {
-                    sh 'terraform validate'
-                }
-            }
-        }
-        stage('Terraform Plan'){
-            steps{
-                dir('Eks-terraform') {
-                    sh 'terraform plan'
-                }
-            }
-        }
-        stage('Terraform Apply/Destroy'){
-            steps{
-                dir('Eks-terraform') {
-                    sh 'terraform ${action} --auto-approve'
+                script{
+                    waitForQualityGate abortPipeline: false, credentialsId: 'sonarqube'
                 }
             }
         }
