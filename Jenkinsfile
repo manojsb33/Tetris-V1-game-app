@@ -21,8 +21,8 @@ pipeline {
         stage("Sonarqube Analysis "){
             steps{
                 withSonarQubeEnv('sonar-server') {
-                    sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Tetris \
-                    -Dsonar.projectKey=Tetris '''
+                    sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Tetris-v1 \
+                    -Dsonar.projectKey=Tetris-v1 '''
                 }
             }
         }
