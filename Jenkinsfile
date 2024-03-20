@@ -4,21 +4,22 @@ pipeline{
         jdk 'jdk17'
         nodejs 'node16'
     }
-    environment {
-        SCANNER_HOME=tool 'sonar-scaner'      
+    environment{
+        SCANNER_HOME=tool 'sonar-scanner'
     }
-    stages {
-        stage('clean workspace'){
-            steps{
-                cleanWs()
-            }
-        }
-        stage('Checkout from Git'){
+
+    stages{
+        stage('Git Checkout'){
             steps{
                 git branch: 'main', url: 'https://github.com/manojsb33/Tetris-V1-game-app.git'
             }
         }
-        stage("Sonarqube Analysis "){
+        stage('Clean Workspace'){
+            steps{
+                cleanWs()
+            }
+        }
+        stage('Sonarqube Analysis'){
             steps{
                 withSonarQubeEnv('sonar-server') {
                     sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=TetrisVersion1.0 \
@@ -26,16 +27,22 @@ pipeline{
                 }
             }
         }
-        stage("quality gate"){
-           steps {
-                script {
-                    waitForQualityGate abortPipeline: false, credentialsId: 'sonarqube' 
+        stage('QG'){
+            steps{
+                script{
+                    waitForQualityGate abortPipeline: false, credentialsId: 'sonarqube'
+
                 }
-            } 
-        }
-        stage('Install Dependencies') {
-            steps {
-                sh "npm install"
+            }
+        } 
+        stage('NPM'){
+            steps{
+                sh 'npm install'
+            }
+        } 
+        stage('Trivy Scan'){
+            steps{
+                sh 'trivy fs . > trivyfs.txt'
             }
         }
         stage('OWASP FS SCAN') {
@@ -44,26 +51,25 @@ pipeline{
                 dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
             }
         }
-        stage('TRIVY FS SCAN') {
-            steps {
-                sh "trivy fs . > trivyfs.txt"
+        stage('Docker Build'){
+            steps{
+                sh 'docker build -t tetris-v1 .'
             }
         }
-        stage("Docker Build & Push"){
+        stage('Docker Push'){
             steps{
                 script{
-                   withDockerRegistry(credentialsId: 'docker', toolName: 'docker'){   
-                       sh "docker build -t tetrisv1 ."
-                       sh "docker tag tetrisv1 manoj3366/tetrisv1:latest "
-                       sh "docker push manoj3366/tetrisv1:latest "
+                    withDockerRegistry(credentialsId: 'docker', toolName: 'docker') {
+                        sh 'docker tag tetris-v1 manoj3366/tetris-v1:latest'
+                        sh 'docker push manoj3366/tetris-v1:latest'
                     }
                 }
             }
         }
-        stage("TRIVY"){
+        stage('Trivy Image Scan'){
             steps{
-                sh "trivy image sevenajay/tetrisv1:latest > trivyimage.txt" 
+                sh 'trivy image manoj3366/tetris-v1:latest > trivyimage.txt'
             }
-        }
+        }    
     }
 }
